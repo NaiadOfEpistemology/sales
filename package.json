@@ -1,21 +1,25 @@
 {
-  "name": "ruby-auto-parts",
-  "private": true,
+  "name": "ruby-auto-parts-inventory",
   "version": "2.0.0",
+  "description": "Ruby Auto Parts Inventory Management System",
   "type": "module",
-  "description": "Ruby Auto Parts Inventory Management System with Supabase",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "setup-db": "echo 'Run the supabase_new_database.sql script in your Supabase SQL Editor'",
-    "test-connection": "node -e \"import('./src/database.js').then(db => console.log('Database connection test:', db.supabase ? 'Connected' : 'Failed'))\""
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "setup-db": "node scripts/setup-db.js",
+    "test-connection": "node scripts/test-connection.js"
   },
   "devDependencies": {
-    "vite": "^7.1.2"
+    "@playwright/test": "^1.40.0",
+    "vite": "^5.0.0"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.57.4",
-    "jsbarcode": "^3.12.1"
+    "@supabase/supabase-js": "^2.38.0",
+    "jsbarcode": "^3.11.5"
   }
 }
