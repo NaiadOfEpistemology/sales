@@ -92,13 +92,32 @@
   </style>
 </head>
 <body>
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 2px solid #eee;">
-  <h1 style="margin: 0;">🏢 Ruby Auto Parts - Administrator Panel</h1>
-  <div style="display: flex; align-items: center; gap: 1rem;">
-    <span style="color: #666; font-size: 0.9rem;">Welcome, <strong id="currentUser">admin</strong></span>
-    <button onclick="logout()" style="background-color: #e74c3c; color: #fff; border: 1px solid #e74c3c; padding: 0.5rem 1rem; font-size: 0.9rem; cursor: pointer; border-radius: 4px;">Logout</button>
+<!-- Navigation -->
+<nav style="background: #2c3e50; color: white; padding: 1rem; margin-bottom: 1rem; border-radius: 4px;">
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div style="display: flex; align-items: center; gap: 1rem;">
+      <h2 style="margin: 0; font-size: 1.2rem;">🏢 Ruby Auto Parts</h2>
+      <span style="font-size: 0.9rem; color: #bdc3c7;">Analytics & Metrics</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 0.5rem;">
+      <span style="font-size: 0.9rem;">Welcome, <strong id="currentUser">admin</strong></span>
+      <button onclick="logout()" style="background: #e74c3c; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-size: 0.9rem;">Logout</button>
+    </div>
   </div>
-</div>
+  
+  <div style="margin-top: 1rem; display: flex; flex-wrap: wrap; gap: 0.5rem;">
+    <a href="inventory.html" style="background: #3498db; color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.9rem;">📦 Add Inventory</a>
+    <a href="inventory-list.html" style="background: #2c3e50; color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.9rem;">📋 Inventory List</a>
+    <a href="batch.html" style="background: #9b59b6; color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.9rem;">📋 Batch Management</a>
+    <a href="active-inventory.html" style="background: #27ae60; color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.9rem;">✅ Active Stock</a>
+    <a href="onhold-inventory.html" style="background: #f39c12; color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.9rem;">⏸️ On-Hold Stock</a>
+    <a href="billing.html" style="background: #e67e22; color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.9rem;">💰 Billing</a>
+    <a href="activate.html" style="background: #1abc9c; color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.9rem;">🔄 Activate</a>
+    <a href="audit.html" style="background: #6f42c1; color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.9rem;">🔍 Audit</a>
+    <a href="add-product.html" style="background: #17a2b8; color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.9rem;">➕ Add Product</a>
+    <a href="metrics.html" style="background: #8e44ad; color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.9rem;">📊 Metrics</a>
+  </div>
+</nav>
 
 <div class="kpi-cards">
 <div class="kpi"><h3>Total Products</h3><p id="totalProducts">0</p></div>
@@ -139,7 +158,6 @@
 </div>
 <canvas id="salesChart"></canvas>
 <canvas id="topProductsChart"></canvas>
-<div id="discountInfo"></div>
 <div id="customerStats"></div>
 </div>
 
@@ -162,8 +180,8 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
 const db = createClient(
-  'https://yrilfazkyhqwdqkgzcbb.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlyaWxmYXpreWhxd2Rxa2d6Y2JiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc5MzczMTYsImV4cCI6MjA3MzUxMzMxNn0._ayJaSCilAzfOmqcczBYv6_ghYbHevW89u09_2c9b60'
+  import.meta.env.VITE_SUPABASE_URL || 'https://aknhtapidbkwksvjsqsu.supabase.co',
+  import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFrbmh0YXBpZGJrd2tzdmpzcXN1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgzMTMxMzgsImV4cCI6MjA3Mzg4OTEzOH0.l3oaU9sO1HfTpLKI8xkl0gikIofmYdmW3sYKJHq3zVE'
 )
 
 let salesChartInstance, topChartInstance
@@ -171,49 +189,42 @@ let salesChartInstance, topChartInstance
 async function loadKPIs() {
   const { data: products } = await db.from('products').select('*')
   const { data: bills } = await db.from('bills').select('*')
+  const { data: inventory } = await db.from('inventory').select('quantity_active, quantity_on_hold')
+  
   document.getElementById('totalProducts').textContent = products.length
-  document.getElementById('activeStock').textContent = products.reduce((sum,p)=>sum+(p.qty_active||0),0)
-  document.getElementById('holdStock').textContent = products.reduce((sum,p)=>sum+(p.qty_on_hold||0),0)
+  document.getElementById('activeStock').textContent = inventory.reduce((sum,i)=>sum+(i.quantity_active||0),0)
+  document.getElementById('holdStock').textContent = inventory.reduce((sum,i)=>sum+(i.quantity_on_hold||0),0)
   document.getElementById('totalRevenue').textContent = '₹'+bills.reduce((sum,b)=>sum+(b.total_amount||0),0).toFixed(2)
   document.getElementById('totalBills').textContent = bills.length
 }
 
 async function loadInventory() {
-  const { data: products } = await db.from('products').select('*')
+  const { data: inventory } = await db.from('inventory_summary').select('*')
   const tbody = document.querySelector('#inventoryTable tbody')
   tbody.innerHTML = ''
-  products.forEach(p=>{
+  inventory.forEach(item=>{
     const row = document.createElement('tr')
     row.innerHTML = `
-      <td>${p.name}</td>
-      <td>${p.variant}</td>
-      <td>${p.class_of_product||'-'}</td>
-      <td>${p.brand}</td>
-      <td><input type="number" value="${p.quantity}" min="0" onchange="updateProduct('${p.id}',this.value,'quantity')"></td>
-      <td><input type="number" value="${p.qty_on_hold||0}" min="0" onchange="updateProduct('${p.id}',this.value,'qty_on_hold')"></td>
-      <td>${p.qty_active||0}</td>
-      <td><input type="number" value="${p.price}" min="0" step="0.01" onchange="updateProduct('${p.id}',this.value,'price')"></td>
-      <td><input type="text" value="${p.shelf_code||''}" onchange="updateProduct('${p.id}',this.value,'shelf_code')"></td>
-      <td><button onclick="deleteProduct('${p.id}')">Delete</button></td>
+      <td>${item.part_name}</td>
+      <td>${item.variant}</td>
+      <td>${item.class||'-'}</td>
+      <td>${item.brand}</td>
+      <td>${item.total_quantity}</td>
+      <td>${item.total_on_hold}</td>
+      <td>${item.total_active}</td>
+      <td>₹${item.price}</td>
+      <td>${item.shelf_code||'-'}</td>
+      <td><button onclick="deleteProduct('${item.product_id}')">Delete</button></td>
     `
     tbody.appendChild(row)
   })
 }
 
-window.updateProduct = async (id,value,column)=>{
-  let updateObj={}
-  updateObj[column] = ['quantity','qty_on_hold','price'].includes(column)?parseFloat(value):value
-  if(column==='quantity'||column==='qty_on_hold'){
-    const { data: old } = await db.from('products').select('quantity,qty_on_hold').eq('id',id).single()
-    updateObj.qty_active = Math.max((updateObj.quantity||old.quantity)-(updateObj.qty_on_hold||old.qty_on_hold),0)
-  }
-  await db.from('products').update(updateObj).eq('id',id)
-  loadInventory()
-  loadKPIs()
-}
-
 window.deleteProduct = async (id)=>{
-  if(!confirm("Delete product?")) return
+  if(!confirm("Delete product and all its inventory?")) return
+  // Delete from inventory first (due to foreign key constraints)
+  await db.from('inventory').delete().eq('product_id',id)
+  // Then delete the product
   await db.from('products').delete().eq('id',id)
   loadInventory()
   loadKPIs()
@@ -246,12 +257,12 @@ async function loadTopSelling() {
   const tally = {}
   sales.forEach(s=>{ tally[s.product_id] = (tally[s.product_id]||0) + s.quantity_sold })
   const ids = Object.keys(tally)
-  const { data: products } = await db.from('products').select('id,name,variant')
+  const { data: products } = await db.from('products').select('id,part_name,variant')
   const labels = []
   const values = []
   ids.forEach(id=>{
     const p = products.find(x=>x.id===id)
-    labels.push(`${p?.name||'Unknown'} (${p?.variant||''})`)
+    labels.push(`${p?.part_name||'Unknown'} (${p?.variant||''})`)
     values.push(tally[id])
   })
   if(topChartInstance) topChartInstance.destroy()
@@ -261,11 +272,6 @@ async function loadTopSelling() {
   })
 }
 
-async function loadDiscounts() {
-  const { data: bills } = await db.from('bills').select('total_discount')
-  const totalDiscount = bills.reduce((sum,b)=>sum+(b.total_discount||0),0)
-  document.getElementById('discountInfo').innerHTML = `<h3>Discounts</h3><p>Total: ₹${totalDiscount.toFixed(2)}</p><p>Average: ₹${(totalDiscount/bills.length).toFixed(2)}</p>`
-}
 
 async function loadCustomers() {
   const { data: bills } = await db.from('bills').select('customer_phone')
@@ -298,7 +304,6 @@ loadKPIs()
 loadInventory()
 loadSales('daily')
 loadTopSelling()
-loadDiscounts()
 loadCustomers()
 loadRecent()
 

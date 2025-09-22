@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Billing - Ruby Auto Parts</title>
+  <title>Add Product - Ruby Auto Parts</title>
   <script>
     // Check authentication
     if (sessionStorage.getItem('rubyAutoPartsLoggedIn') !== 'true') {
@@ -41,26 +41,25 @@
       font-weight: 600;
     }
     
-    .form-row {
-      display: flex;
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
       gap: 1rem;
-      align-items: end;
+      margin-bottom: 1.5rem;
     }
     
-    .form-row input {
-      flex: 1;
-    }
-    
-    .barcode-row {
+    .form-group {
       display: flex;
-      gap: 1rem;
+      flex-direction: column;
     }
     
-    .barcode-row input {
-      flex: 1;
+    .form-group label {
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+      color: #495057;
     }
     
-    input {
+    input, select, textarea {
       font-family: inherit;
       font-size: 0.95rem;
       padding: 0.75rem;
@@ -71,7 +70,7 @@
       transition: border-color 0.2s;
     }
     
-    input:focus {
+    input:focus, select:focus, textarea:focus {
       outline: none;
       border-color: #3498db;
     }
@@ -105,90 +104,73 @@
       background: #5a6268;
     }
     
-    .customer-display {
-      margin-top: 1rem;
-      padding: 0.75rem;
-      background: #e8f5e8;
-      border-radius: 6px;
-      color: #27ae60;
-      font-weight: 500;
-      display: none;
-    }
-    
-    .cart-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1rem;
-    }
-    
-    .cart-total {
-      font-size: 1.2rem;
-      font-weight: 600;
-      color: #27ae60;
-    }
-    
-    .cart-table-container {
-      overflow-x: auto;
-      margin-bottom: 1.5rem;
-    }
-    
-    #cart-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.9rem;
-    }
-    
-    #cart-table th {
-      background: #f8f9fa;
-      color: #495057;
-      font-weight: 600;
-      padding: 0.75rem;
-      text-align: left;
-      border-bottom: 2px solid #e9ecef;
-    }
-    
-    #cart-table td {
-      padding: 0.75rem;
-      border-bottom: 1px solid #e9ecef;
-    }
-    
-    #cart-table tr:hover {
-      background: #f8f9fa;
-    }
-    
-    #cart-table input[type="number"] {
-      width: 60px;
-      padding: 0.5rem;
-      text-align: center;
-    }
-    
-    .cart-actions {
+    .form-actions {
       display: flex;
       gap: 1rem;
       justify-content: flex-end;
     }
     
-    .cart-actions button {
-      min-width: 120px;
+    .success-message {
+      background: #d4edda;
+      color: #155724;
+      padding: 0.75rem;
+      border-radius: 6px;
+      margin-bottom: 1rem;
+      display: none;
+    }
+    
+    .error-message {
+      background: #f8d7da;
+      color: #721c24;
+      padding: 0.75rem;
+      border-radius: 6px;
+      margin-bottom: 1rem;
+      display: none;
+    }
+    
+    .existing-products {
+      max-height: 300px;
+      overflow-y: auto;
+      border: 1px solid #e9ecef;
+      border-radius: 6px;
+    }
+    
+    .product-item {
+      padding: 0.75rem;
+      border-bottom: 1px solid #e9ecef;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    
+    .product-item:hover {
+      background: #f8f9fa;
+    }
+    
+    .product-item:last-child {
+      border-bottom: none;
+    }
+    
+    .product-name {
+      font-weight: 500;
+      color: #2c3e50;
+    }
+    
+    .product-details {
+      font-size: 0.9rem;
+      color: #6c757d;
+      margin-top: 0.25rem;
     }
     
     @media (max-width: 768px) {
-      .form-row, .barcode-row {
-        flex-direction: column;
+      .form-grid {
+        grid-template-columns: 1fr;
       }
       
-      .cart-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.5rem;
-      }
-      
-      .cart-actions {
+      .form-actions {
         flex-direction: column;
       }
     }
-    </style>
+  </style>
 </head>
 <body>
   <!-- Navigation -->
@@ -196,7 +178,7 @@
     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
       <div style="display: flex; align-items: center; gap: 1rem;">
         <h2 style="margin: 0; font-size: 1.2rem;">🏢 Ruby Auto Parts</h2>
-        <span style="font-size: 0.9rem; color: #bdc3c7;">Billing System</span>
+        <span style="font-size: 0.9rem; color: #bdc3c7;">Add Product</span>
       </div>
       <div style="display: flex; align-items: center; gap: 0.5rem;">
         <span style="font-size: 0.9rem;">Welcome, <strong id="currentUser">admin</strong></span>
@@ -217,60 +199,84 @@
       <a href="metrics.html" style="background: #8e44ad; color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.9rem;">📊 Metrics</a>
     </div>
   </nav>
-  <!-- Customer Section -->
+
+  <!-- Success/Error Messages -->
+  <div id="successMessage" class="success-message"></div>
+  <div id="errorMessage" class="error-message"></div>
+
+  <!-- Add Product Form -->
   <div class="section">
-    <h3>👤 Customer Information</h3>
-    <form id="customerForm" class="customer-form">
-      <div class="form-row">
-        <input type="text" id="customerName" placeholder="Customer Name" required>
-        <input type="text" id="customerPhone" placeholder="Phone Number">
-        <button type="submit">Set Customer</button>
+    <h3>➕ Add New Product</h3>
+    <form id="productForm">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="partName">Part Name *</label>
+          <input type="text" id="partName" placeholder="Enter part name" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="variant">Variant</label>
+          <input type="text" id="variant" placeholder="e.g., Size, Model, Type">
+        </div>
+        
+        <div class="form-group">
+          <label for="class">Class *</label>
+          <select id="class" required>
+            <option value="">Select Class</option>
+            <option value="Service">Service</option>
+            <option value="Suspension">Suspension</option>
+            <option value="Clutch">Clutch</option>
+            <option value="Brake">Brake</option>
+            <option value="Electronic">Electronic</option>
+            <option value="Engine">Engine</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label for="brand">Brand *</label>
+          <input type="text" id="brand" placeholder="Enter brand name" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="price">Price (₹) *</label>
+          <input type="number" id="price" placeholder="0.00" step="0.01" min="0" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="shelfCode">Shelf Code</label>
+          <input type="text" id="shelfCode" placeholder="e.g., A1-B2-C3">
+        </div>
+      </div>
+      
+      
+      <div class="form-actions">
+        <button type="button" class="btn-secondary" onclick="clearForm()">Clear Form</button>
+        <button type="submit" class="btn-primary">Add Product</button>
       </div>
     </form>
-    <div id="customerDisplay" class="customer-display"></div>
   </div>
 
-  <!-- Barcode Scanning Section -->
+  <!-- Existing Products -->
   <div class="section">
-    <h3>📱 Add Products by Barcode</h3>
-    <div class="barcode-row">
-      <input type="text" id="barcodeInput" placeholder="📱 Scan or Enter Barcode">
+    <h3>📋 Existing Products</h3>
+    <div class="form-group">
+      <input type="text" id="searchProducts" placeholder="🔍 Search existing products..." oninput="searchExistingProducts()">
     </div>
+    <div id="existingProducts" class="existing-products"></div>
   </div>
 
-  <!-- Cart Section -->
-  <div class="section cart-section">
-    <div class="cart-header">
-      <h3>🛒 Shopping Cart</h3>
-      <div class="cart-total">
-        <span>Total: ₹<span id="grandTotal">0</span></span>
-      </div>
-    </div>
-    
-    <div class="cart-table-container">
-      <table id="cart-table">
-        <thead>
-          <tr>
-            <th>Product</th>
-            <th>Price</th>
-            <th>Qty</th>
-            <th>Total</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-    
-    <div class="cart-actions">
-      <button id="printBill" class="btn-secondary">🖨️ Print Bill</button>
-      <button id="finalizeBill" class="btn-primary">✅ Finalize Bill</button>
-    </div>
-  </div>
   <script>
     // Set current user
     document.getElementById('currentUser').textContent = sessionStorage.getItem('rubyAutoPartsUser') || 'admin';
   </script>
-  <script type="module" src="./src/billing.js"></script>
+  <script type="module" src="./src/addProduct.js"></script>
+  <script>
+    // Load existing products after module loads
+    window.addEventListener('DOMContentLoaded', () => {
+      if (window.loadExistingProducts) {
+        window.loadExistingProducts();
+      }
+    });
+  </script>
 </body>
 </html>

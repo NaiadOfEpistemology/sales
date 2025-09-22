@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Batch Management - Ruby Auto Parts</title>
+  <script>
+    // Check authentication
+    if (sessionStorage.getItem('rubyAutoPartsLoggedIn') !== 'true') {
+      window.location.href = 'login.html';
+    }
+    
+    function logout() {
+      sessionStorage.removeItem('rubyAutoPartsLoggedIn');
+      sessionStorage.removeItem('rubyAutoPartsUser');
+      sessionStorage.removeItem('currentBatch');
+      window.location.href = 'login.html';
+    }
+    
+    function resetBatch() {
+      if (confirm("Are you sure you want to reset the current batch? This will clear the current batch session but keep all existing product batch information.")) {
+        sessionStorage.removeItem('currentBatch');
+        sessionStorage.removeItem('currentVendor');
+        // Don't clear batchTracking - this keeps the relationship between products and batches
+        alert("Current batch reset successfully. All existing products will retain their batch information. You can now create a new batch.");
+        location.reload();
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #fff;
+      margin: 0;
+      padding: 2rem;
+      color: #000;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid #eee;
+    }
+    .header h1 {
+      margin: 0;
+      color: #333;
+    }
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .user-info span {
+      color: #666;
+      font-size: 0.9rem;
+    }
+    .logout-btn {
+      background-color: #e74c3c;
+      color: #fff;
+      border: 1px solid #e74c3c;
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    .logout-btn:hover {
+      background-color: #c0392b;
+      border-color: #c0392b;
+    }
+    .reset-btn {
+      background-color: #f39c12;
+      color: #fff;
+      border: 1px solid #f39c12;
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    .reset-btn:hover {
+      background-color: #e67e22;
+      border-color: #e67e22;
+    }
+    h2 {
+      margin-bottom: 1rem;
+    }
+    .batch-info {
+      background-color: #e8f5e8;
+      padding: 1rem;
+      border-radius: 4px;
+      margin-bottom: 1.5rem;
+      border: 1px solid #4caf50;
+    }
+    .batch-info h3 {
+      margin: 0 0 0.5rem 0;
+      color: #2e7d32;
+    }
+    .batch-details {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+    .batch-detail {
+      display: flex;
+      flex-direction: column;
+    }
+    .batch-detail strong {
+      color: #2e7d32;
+      font-size: 0.9rem;
+    }
+    .batch-detail span {
+      color: #333;
+      font-size: 1rem;
+    }
+    form {
+      background-color: #fff;
+      padding: 1rem;
+      border-radius: 4px;
+      margin-bottom: 1.5rem;
+      border: 1px solid #999;
+    }
+    .form-row {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 0.8rem;
+    }
+    .form-row input, .form-row select {
+      flex: 1;
+      padding: 0.5rem;
+      font-size: 0.9rem;
+      border: 1px solid #999;
+      border-radius: 4px;
+      background: #fff;
+      color: #000;
+    }
+    .form-row.full-width {
+      flex-direction: column;
+    }
+    .form-row.full-width input {
+      width: 100%;
+    }
+    button {
+      background-color: #000;
+      color: #fff;
+      border: 1px solid #000;
+      padding: 0.6rem 1rem;
+      font-size: 0.9rem;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    button:hover {
+      background-color: #555;
+      border-color: #555;
+    }
+    .search-section {
+      background-color: #f8f9fa;
+      padding: 1rem;
+      border-radius: 4px;
+      margin-bottom: 1.5rem;
+      border: 1px solid #dee2e6;
+    }
+    .search-section h3 {
+      margin-top: 0;
+      color: #495057;
+    }
+    .search-input-group {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+    .search-input-group input {
+      flex: 1;
+      padding: 0.5rem;
+      font-size: 0.9rem;
+      border: 1px solid #999;
+      border-radius: 4px;
+      background: #fff;
+      color: #000;
+    }
+    .search-btn {
+      background-color: #007bff;
+      color: #fff;
+      border: 1px solid #007bff;
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    .search-btn:hover {
+      background-color: #0056b3;
+      border-color: #0056b3;
+    }
+    #vendorResults {
+      margin-top: 1rem;
+      padding: 1rem;
+      background-color: #fff;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      display: none;
+    }
+    .vendor-item {
+      padding: 0.5rem;
+      border-bottom: 1px solid #eee;
+      cursor: pointer;
+    }
+    .vendor-item:hover {
+      background-color: #f8f9fa;
+    }
+    .vendor-item:last-child {
+      border-bottom: none;
+    }
+    .vendor-name {
+      font-weight: bold;
+      color: #333;
+    }
+    .vendor-details {
+      font-size: 0.9rem;
+      color: #666;
+      margin-top: 0.2rem;
+    }
+    .navigation {
+      margin-top: 2rem;
+      padding-top: 1rem;
+      border-top: 1px solid #eee;
+    }
+    .nav-buttons {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .add-stock-btn {
+      background-color: #28a745;
+      border-color: #28a745;
+    }
+    .add-stock-btn:hover {
+      background-color: #218838;
+      border-color: #1e7e34;
+    }
+    .add-stock-btn:disabled {
+      background-color: #6c757d;
+      border-color: #6c757d;
+      cursor: not-allowed;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+</head>
+<body>
+  <!-- Navigation -->
+  <nav style="background: #2c3e50; color: white; padding: 1rem; margin-bottom: 1rem; border-radius: 4px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+      <div style="display: flex; align-items: center; gap: 1rem;">
+        <h2 style="margin: 0; font-size: 1.2rem;">🏢 Ruby Auto Parts</h2>
+        <span style="font-size: 0.9rem; color: #bdc3c7;">Batch Management</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <span style="font-size: 0.9rem;">Welcome, <strong id="currentUser">admin</strong></span>
+        <button onclick="resetBatch()" style="background: #f39c12; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-size: 0.9rem;">Reset Batch</button>
+        <button onclick="logout()" style="background: #e74c3c; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-size: 0.9rem;">Logout</button>
+      </div>
+    </div>
+    
+    <div style="margin-top: 1rem; display: flex; flex-wrap: wrap; gap: 0.5rem;">
+      <a href="inventory.html" style="background: #3498db; color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.9rem;">📦 Add Inventory</a>
+      <a href="inventory-list.html" style="background: #2c3e50; color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.9rem;">📋 Inventory List</a>
+      <a href="batch.html" style="background: #9b59b6; color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.9rem;">📋 Batch Management</a>
+      <a href="active-inventory.html" style="background: #27ae60; color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.9rem;">✅ Active Stock</a>
+      <a href="onhold-inventory.html" style="background: #f39c12; color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.9rem;">⏸️ On-Hold Stock</a>
+      <a href="billing.html" style="background: #e67e22; color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.9rem;">💰 Billing</a>
+      <a href="activate.html" style="background: #1abc9c; color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.9rem;">🔄 Activate</a>
+      <a href="audit.html" style="background: #6f42c1; color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.9rem;">🔍 Audit</a>
+      <a href="add-product.html" style="background: #17a2b8; color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.9rem;">➕ Add Product</a>
+      <a href="metrics.html" style="background: #8e44ad; color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.9rem;">📊 Metrics</a>
+    </div>
+  </nav>
+
+  <div id="batchInfo" class="batch-info" style="display: none;">
+    <h3>Current Batch Information</h3>
+    <div class="batch-details">
+      <div class="batch-detail">
+        <strong>Batch ID:</strong>
+        <span id="currentBatchId">-</span>
+      </div>
+      <div class="batch-detail">
+        <strong>Vendor Name:</strong>
+        <span id="currentVendorName">-</span>
+      </div>
+      <div class="batch-detail">
+        <strong>Invoice Number:</strong>
+        <span id="currentInvoiceNumber">-</span>
+      </div>
+      <div class="batch-detail">
+        <strong>Created:</strong>
+        <span id="currentTimestamp">-</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="newBatchForm" class="form-section">
+    <h2>Create New Batch</h2>
+    <form id="batchForm">
+      <div class="form-row">
+        <input type="text" id="vendorName" placeholder="Vendor Name" required>
+        <input type="text" id="invoiceNumber" placeholder="Invoice Number" required>
+      </div>
+      <button type="submit">Create New Batch</button>
+    </form>
+  </div>
+
+  <div class="search-section">
+    <h3>Search Vendor Details</h3>
+    <p>Scan or enter barcode to search for vendor information:</p>
+    <div class="search-input-group">
+      <input type="text" id="searchInput" placeholder="Enter or scan barcode...">
+      <button id="searchBtn" class="search-btn">Search</button>
+    </div>
+    <div id="vendorResults"></div>
+  </div>
+
+  <div class="navigation">
+    <h3>Quick Actions</h3>
+    <div class="nav-buttons">
+      <button id="addStockBtn" class="add-stock-btn" onclick="goToInventory()" disabled>Add Stock Items</button>
+      <button onclick="window.location.href='inventory-list.html'">View Inventory</button>
+      <button onclick="window.location.href='active-inventory.html'">Active Inventory</button>
+      <button onclick="window.location.href='onhold-inventory.html'">On-Hold Inventory</button>
+    </div>
+  </div>
+  
+  <script type="module">
+    // Wait for DOM and Supabase to load
+    function initializeApp() {
+      if (typeof supabase === 'undefined') {
+        // If Supabase is not loaded yet, wait a bit and try again
+        setTimeout(initializeApp, 100);
+        return;
+      }
+      
+      // Set current user
+      document.getElementById('currentUser').textContent = sessionStorage.getItem('rubyAutoPartsUser') || 'admin';
+
+      // Check if batch already exists
+      const currentBatch = sessionStorage.getItem('currentBatch');
+      if (currentBatch) {
+        displayBatchInfo(JSON.parse(currentBatch));
+      }
+
+      // Initialize Supabase
+      const supabaseClient = supabase.createClient(
+        import.meta.env.VITE_SUPABASE_URL || 'https://aknhtapidbkwksvjsqsu.supabase.co',
+        import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFrbmh0YXBpZGJrd2tzdmpzcXN1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgzMTMxMzgsImV4cCI6MjA3Mzg4OTEzOH0.l3oaU9sO1HfTpLKI8xkl0gikIofmYdmW3sYKJHq3zVE'
+      );
+
+    // Create new batch
+    document.getElementById('batchForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const vendorName = document.getElementById('vendorName').value.trim();
+      const invoiceNumber = document.getElementById('invoiceNumber').value.trim();
+      
+      if (!vendorName || !invoiceNumber) {
+        alert('Please fill in all fields.');
+        return;
+      }
+
+      const timestamp = new Date().toISOString();
+      const batchId = `${invoiceNumber}-${vendorName}-${timestamp}`;
+      
+      const batchData = {
+        batchId: batchId,
+        vendorName: vendorName,
+        invoiceNumber: invoiceNumber,
+        timestamp: timestamp,
+        created: new Date().toLocaleString('en-IN', {
+          timeZone: 'Asia/Kolkata',
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+      };
+
+      // Store batch in session storage
+      sessionStorage.setItem('currentBatch', JSON.stringify(batchData));
+      sessionStorage.setItem('currentVendor', JSON.stringify({
+        name: vendorName,
+        invoiceNumber: invoiceNumber
+      }));
+
+      displayBatchInfo(batchData);
+      alert(`Batch created successfully!\nBatch ID: ${batchId}\n\nYou will now be redirected to add stock items for this vendor.`);
+      
+      // Navigate to inventory page after a short delay
+      setTimeout(() => {
+        window.location.href = 'inventory.html';
+      }, 2000);
+    });
+
+    function displayBatchInfo(batchData) {
+      document.getElementById('currentBatchId').textContent = batchData.batchId;
+      document.getElementById('currentVendorName').textContent = batchData.vendorName;
+      document.getElementById('currentInvoiceNumber').textContent = batchData.invoiceNumber;
+      document.getElementById('currentTimestamp').textContent = batchData.created;
+      
+      document.getElementById('batchInfo').style.display = 'block';
+      document.getElementById('newBatchForm').style.display = 'none';
+      document.getElementById('addStockBtn').disabled = false;
+    }
+
+    async function searchVendor() {
+      const query = document.getElementById('searchInput').value.trim();
+      const resultsDiv = document.getElementById('vendorResults');
+      
+      if (query.length < 1) {
+        resultsDiv.style.display = 'none';
+        return;
+      }
+
+      try {
+        // Search for inventory items with matching barcode
+        const { data, error } = await supabaseClient
+          .from('batch_details')
+          .select('*')
+          .eq('barcode', query)
+          .limit(10);
+          
+        console.log('Database query result:', data);
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          resultsDiv.innerHTML = '';
+          
+          // Debug: Log the first product to see what data we're getting
+          console.log('Search result sample:', data[0]);
+          
+          // Show search summary
+          const summaryDiv = document.createElement('div');
+          summaryDiv.className = 'vendor-item';
+          summaryDiv.style.backgroundColor = '#e8f5e8';
+          summaryDiv.style.border = '1px solid #4caf50';
+          summaryDiv.innerHTML = `
+            <div class="vendor-name">🔍 Search Results for: "${query}"</div>
+            <div class="vendor-details">
+              <strong>Found ${data.length} product(s)</strong>
+            </div>
+          `;
+          resultsDiv.appendChild(summaryDiv);
+          
+          data.forEach(item => {
+            // Get vendor info from batch_details data
+            let vendorInfo = item.vendor_name || '';
+            let batchInfo = item.batch_number || '';
+            
+            // Try localStorage first (persistent), then sessionStorage for additional tracking
+            let batchTracking = localStorage.getItem('batchTracking');
+            if (!batchTracking) {
+              batchTracking = sessionStorage.getItem('batchTracking');
+            }
+            
+            if (batchTracking) {
+              const tracking = JSON.parse(batchTracking);
+              const trackingData = tracking[item.barcode];
+              if (trackingData) {
+                vendorInfo = trackingData.vendorName || vendorInfo;
+                batchInfo = trackingData.batchId || batchInfo;
+              }
+            }
+            
+            if (!vendorInfo) {
+              vendorInfo = extractVendorFromBarcode(item.barcode);
+            }
+            
+            // Try to get more detailed vendor info from current batch
+            const currentBatch = sessionStorage.getItem('currentBatch');
+            if (currentBatch && !vendorInfo) {
+              const batchData = JSON.parse(currentBatch);
+              vendorInfo = batchData.vendorName;
+            }
+
+            // Format the date properly
+            let formattedDate = 'Unknown';
+            console.log('Item date_added:', item.date_added, 'Type:', typeof item.date_added);
+            
+            if (item.date_added) {
+              try {
+                const date = new Date(item.date_added);
+                console.log('Parsed date:', date, 'Is valid:', !isNaN(date.getTime()));
+                if (!isNaN(date.getTime())) {
+                  formattedDate = date.toLocaleString('en-IN', {
+                    timeZone: 'Asia/Kolkata',
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                  });
+                  console.log('Formatted date:', formattedDate);
+                } else {
+                  // Try alternative date parsing
+                  const altDate = new Date(item.date_added + 'T00:00:00');
+                  if (!isNaN(altDate.getTime())) {
+                    formattedDate = altDate.toLocaleString('en-IN', {
+                      timeZone: 'Asia/Kolkata',
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric'
+                    });
+                    console.log('Alternative formatted date:', formattedDate);
+                  }
+                }
+              } catch (error) {
+                console.log('Date formatting error:', error, 'Raw date:', item.date_added);
+                formattedDate = item.date_added || 'Invalid date'; // Show raw value if formatting fails
+              }
+            } else {
+              console.log('No date_added field found for item:', item.part_name);
+              // Fallback to current date if no date is available
+              formattedDate = new Date().toLocaleString('en-IN', {
+                timeZone: 'Asia/Kolkata',
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+              });
+            }
+
+            const vendorDiv = document.createElement('div');
+            vendorDiv.className = 'vendor-item';
+            vendorDiv.innerHTML = `
+              <div class="vendor-name">${item.part_name} (${item.variant || ''})</div>
+              <div class="vendor-details">
+                <strong>Brand:</strong> ${item.brand} | 
+                <strong>Class:</strong> ${item.class || '-'} | 
+                <strong>Price:</strong> ₹${item.price} | 
+                <strong>Qty:</strong> ${(item.quantity_on_hold + item.quantity_active)}
+                <br><strong>Barcode:</strong> ${item.barcode}
+                ${vendorInfo ? `<br><strong>Vendor:</strong> ${vendorInfo}` : '<br><strong>Vendor:</strong> Not available'}
+                ${batchInfo ? `<br><strong>Batch ID:</strong> ${batchInfo}` : ''}
+                <br><strong>Date Added:</strong> ${formattedDate}
+              </div>
+            `;
+            vendorDiv.onclick = () => {
+              document.getElementById('searchInput').value = item.barcode;
+              resultsDiv.style.display = 'none';
+            };
+            resultsDiv.appendChild(vendorDiv);
+          });
+          resultsDiv.style.display = 'block';
+        } else {
+          resultsDiv.innerHTML = '<div class="vendor-item">No products found with this barcode.</div>';
+          resultsDiv.style.display = 'block';
+        }
+      } catch (error) {
+        console.error('Search error:', error);
+        resultsDiv.innerHTML = '<div class="vendor-item">Error searching for vendor details.</div>';
+        resultsDiv.style.display = 'block';
+      }
+    }
+
+    function extractVendorFromBarcode(barcode) {
+      if (!barcode) return null;
+      // Barcode format: RANDOMCODE-VENDOR-INVOICE
+      const parts = barcode.split('-');
+      if (parts.length >= 2) {
+        return parts[1];
+      }
+      return null;
+    }
+
+    function goToInventory() {
+      if (!sessionStorage.getItem('currentBatch')) {
+        alert('Please create a batch first.');
+        return;
+      }
+      window.location.href = 'inventory.html';
+    }
+
+    // Add search button event listener
+    document.getElementById('searchBtn').addEventListener('click', searchVendor);
+
+    // Add Enter key support for search
+    document.getElementById('searchInput').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        searchVendor();
+      }
+    });
+
+    // Hide search results when clicking outside
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.search-section')) {
+        document.getElementById('vendorResults').style.display = 'none';
+      }
+    });
+    } // End of initializeApp function
+    
+    // Start the app when DOM is ready
+    document.addEventListener('DOMContentLoaded', initializeApp);
+  </script>
+</body>
+</html>

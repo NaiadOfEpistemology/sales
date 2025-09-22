@@ -1,18 +1,25 @@
 {
-  "name": "inventory-app",
-  "private": true,
-  "version": "0.0.0",
+  "name": "ruby-auto-parts-inventory",
+  "version": "2.0.0",
+  "description": "Ruby Auto Parts Inventory Management System",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "setup-db": "node scripts/setup-db.js",
+    "test-connection": "node scripts/test-connection.js"
   },
   "devDependencies": {
-    "vite": "^7.1.2"
+    "@playwright/test": "^1.40.0",
+    "vite": "^5.0.0"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.57.0",
-    "jsbarcode": "^3.12.1"
+    "@supabase/supabase-js": "^2.38.0",
+    "jsbarcode": "^3.11.5"
   }
 }
