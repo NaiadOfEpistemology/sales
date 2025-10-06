@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>On-Hold Inventory - Ruby Auto Parts</title>
+  <meta charset="UTF-8">
+  <title>Inventory List - Ruby Auto Parts</title>
   <script>
     // Check authentication
     if (sessionStorage.getItem('rubyAutoPartsLoggedIn') !== 'true') {
@@ -18,106 +18,169 @@
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-      background-color: #fff;
+      background: #f8f9fa;
       margin: 0;
-      padding: 2rem;
-      color: #000;
-    }
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 2rem;
-      padding-bottom: 1rem;
-      border-bottom: 2px solid #eee;
-    }
-    .header h1 {
-      margin: 0;
+      padding: 1rem;
       color: #333;
+      line-height: 1.6;
     }
-    .user-info {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
+    
+    .section {
+      background: white;
+      border-radius: 6px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      border: 1px solid #e9ecef;
     }
-    .user-info span {
-      color: #666;
-      font-size: 0.9rem;
+    
+    .section h3 {
+      margin: 0 0 0.75rem 0;
+      color: #2c3e50;
+      font-size: 1rem;
+      font-weight: 600;
     }
-    .logout-btn {
-      background-color: #e74c3c;
-      color: #fff;
-      border: 1px solid #e74c3c;
-      padding: 0.5rem 1rem;
-      font-size: 0.9rem;
-      cursor: pointer;
-      border-radius: 4px;
+    
+    .search-container {
+      margin-bottom: 1rem;
     }
-    .logout-btn:hover {
-      background-color: #c0392b;
-      border-color: #c0392b;
-    }
-    #searchInput {
-      margin-top: 1rem;
-      padding: 0.5rem;
+    
+    .search-input {
       width: 100%;
-      font-size: 0.9rem;
-      border: 1px solid #999;
+      padding: 0.5rem;
+      border: 2px solid #e9ecef;
       border-radius: 4px;
-      background: #fff;
-      color: #000;
+      font-size: 0.9rem;
+      transition: border-color 0.2s;
     }
-    #inventoryTable {
+    
+    .search-input:focus {
+      outline: none;
+      border-color: #3498db;
+    }
+    
+    table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 1rem;
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    th, td {
+      padding: 0.4rem 0.5rem;
+      text-align: left;
+      border-bottom: 1px solid #e9ecef;
       font-size: 0.85rem;
     }
-    #inventoryTable th, #inventoryTable td {
-      border: 1px solid #999;
-      padding: 0.4rem 0.6rem;
-      text-align: left;
-    }
-    #inventoryTable th {
-      background-color: #eee;
+    
+    th {
+      background: #f8f9fa;
       font-weight: 600;
+      color: #2c3e50;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
     }
-    #inventoryTable tr:hover {
-      background-color: #f0f0f0;
+    
+    tr:hover {
+      background: #f8f9fa;
     }
-    #inventoryTable button {
-      padding: 0.3rem 0.5rem;
+    
+    tr {
+      height: 2.2rem;
+    }
+    
+    code {
+      background: #f8f9fa;
+      padding: 0.2rem 0.3rem;
+      border-radius: 3px;
+      font-family: 'Courier New', monospace;
+    }
+    
+    .btn {
+      padding: 0.3rem 0.6rem;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
       font-size: 0.75rem;
-      margin-right: 0.2rem;
-      border: 1px solid #000;
-      border-radius: 4px;
-      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.2s;
+      text-decoration: none;
+      display: inline-block;
+      margin: 0.1rem;
     }
-    .delete-btn {
-      background-color: #999;
-      color: #fff;
-      border-color: #999;
+    
+    .btn-primary {
+      background: #3498db;
+      color: white;
     }
-    .low-stock {
-        background-color: #f8d7da; 
-        color: #900; 
+    
+    .btn-primary:hover {
+      background: #2980b9;
+    }
+    
+    .btn-danger {
+      background: #e74c3c;
+      color: white;
+    }
+    
+    .btn-danger:hover {
+      background: #c0392b;
+    }
+    
+    .btn-info {
+      background: #17a2b8;
+      color: white;
+    }
+    
+    .btn-info:hover {
+      background: #138496;
+    }
+    
+    .btn-warning {
+      background: #f39c12;
+      color: white;
+    }
+    
+    .btn-warning:hover {
+      background: #e67e22;
+    }
+    
+    .no-data {
+      text-align: center;
+      padding: 2rem;
+      color: #6c757d;
+      font-style: italic;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 2rem;
+      color: #3498db;
+    }
+    
+    @media (max-width: 768px) {
+      table {
+        font-size: 0.75rem;
       }
-    button {
-      background-color: #000;
-      color: #fff;
-      border: 1px solid #000;
-      padding: 0.6rem 1rem;
-      font-size: 0.9rem;
-      cursor: pointer;
-      border-radius: 4px;
-    }
-    button:hover {
-      background-color: #555;
-      border-color: #555;
+      
+      th, td {
+        padding: 0.3rem 0.4rem;
+      }
+      
+      .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.7rem;
+      }
+      
+      tr {
+        height: 2rem;
+      }
     }
   </style>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 </head>
 <body>
   <!-- Navigation -->
@@ -125,7 +188,7 @@
     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
       <div style="display: flex; align-items: center; gap: 1rem;">
         <h2 style="margin: 0; font-size: 1.2rem;">🏢 Ruby Auto Parts</h2>
-        <span style="font-size: 0.9rem; color: #bdc3c7;">On-Hold Inventory</span>
+        <span style="font-size: 0.9rem; color: #bdc3c7;">Inventory List</span>
       </div>
       <div style="display: flex; align-items: center; gap: 0.5rem;">
         <span style="font-size: 0.9rem;">Welcome, <strong id="currentUser">admin</strong></span>
@@ -147,37 +210,27 @@
     </div>
   </nav>
 
-  <input type="text" id="searchInput" placeholder="Search on-hold inventory..." oninput="filterInventory()">
+  <!-- Search Section -->
+  <div class="section">
+    <h3>🔍 Search Inventory</h3>
+    <div class="search-container">
+      <input type="text" id="searchInput" class="search-input" placeholder="Search by part name, variant, brand, barcode, or batch ID..." oninput="filterInventory()">
+    </div>
+  </div>
 
-  <table id="inventoryTable">
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Variant</th>
-        <th>Class</th>
-        <th>Brand</th>
-        <th>Total Qty</th>
-        <th>On-Hold Qty</th>
-        <th>Active Qty</th>
-        <th>Price</th>
-        <th>Total Value</th>
-        <th>Barcode</th>
-        <th>Batch ID</th>
-        <th>Vendor</th>
-        <th>Batch Date</th>
-        <th>Date Added</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+  <!-- Inventory Table -->
+  <div class="section">
+    <h3>📋 Complete Inventory</h3>
+    <div id="inventoryTable">
+      <div class="loading">Loading inventory...</div>
+    </div>
+  </div>
 
-  
-  
   <script>
     // Set current user
     document.getElementById('currentUser').textContent = sessionStorage.getItem('rubyAutoPartsUser') || 'admin';
   </script>
-  <script type="module" src="src/onholdInventory.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+  <script type="module" src="./src/inventoryList.js"></script>
 </body>
 </html>

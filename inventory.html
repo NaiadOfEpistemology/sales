@@ -2,21 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Inventory - Ruby Auto Parts</title>
+  <title>Add Inventory - Ruby Auto Parts</title>
   <script>
     // Check authentication
     if (sessionStorage.getItem('rubyAutoPartsLoggedIn') !== 'true') {
       window.location.href = 'login.html';
     }
     
-    function checkPassword() {
-      const password=prompt("Enter passcode to access analytics:")
-      if(password==="caliberparts2025") {
-        window.location.href="billing.html"
-      } else {
-        alert("Incorrect password. Access denied.")
-      }
-    }
     function checkMetrics(){
       const password=prompt("Enter passcode to access metrics:")
       if(password==="caliberparts2025"){
@@ -26,10 +18,13 @@
       }
     }
     
-    function logout() {
-      sessionStorage.removeItem('rubyAutoPartsLoggedIn');
-      sessionStorage.removeItem('rubyAutoPartsUser');
-      window.location.href = 'login.html';
+    function resetBatch() {
+      if (confirm("Are you sure you want to reset the current batch? This will clear the current batch session but keep all existing product batch information.")) {
+        sessionStorage.removeItem('currentBatch');
+        sessionStorage.removeItem('currentVendor');
+        alert("Current batch reset successfully. All existing products will retain their batch information. You will now be redirected to create a new batch.");
+        window.location.href = 'batch.html';
+      }
     }
   </script>
   <style>
@@ -73,6 +68,19 @@
     .logout-btn:hover {
       background-color: #c0392b;
       border-color: #c0392b;
+    }
+    .reset-btn {
+      background-color: #f39c12;
+      color: #fff;
+      border: 1px solid #f39c12;
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    .reset-btn:hover {
+      background-color: #e67e22;
+      border-color: #e67e22;
     }
     h2 {
       margin-bottom: 1rem;
@@ -147,11 +155,6 @@
       border-radius: 4px;
       cursor: pointer;
     }
-    .edit-btn {
-      background-color: #000;
-      color: #fff;
-      border-color: #000;
-    }
     .delete-btn {
       background-color: #999;
       color: #fff;
@@ -171,17 +174,77 @@
       gap: 1rem;
       flex-wrap: wrap;
     }
+    .batch-indicator {
+      background-color: #e8f5e8;
+      padding: 1rem;
+      border-radius: 4px;
+      margin-bottom: 1.5rem;
+      border: 1px solid #4caf50;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .batch-info h3 {
+      margin: 0 0 0.5rem 0;
+      color: #2e7d32;
+    }
+    .batch-info p {
+      margin: 0;
+      color: #666;
+      font-size: 0.9rem;
+    }
+    .manage-batch-btn {
+      background-color: #4caf50;
+      color: #fff;
+      border: 1px solid #4caf50;
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    .manage-batch-btn:hover {
+      background-color: #45a049;
+      border-color: #45a049;
+    }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 </head>
 <body>
-  <div class="header">
-    <h1>🏢 Ruby Auto Parts - Inventory Manager</h1>
-    <div class="user-info">
-      <span>Welcome, <strong id="currentUser">admin</strong></span>
-      <button class="logout-btn" onclick="logout()">Logout</button>
+  <!-- Navigation -->
+  <nav style="background: #2c3e50; color: white; padding: 1rem; margin-bottom: 1rem; border-radius: 4px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+      <div style="display: flex; align-items: center; gap: 1rem;">
+        <h2 style="margin: 0; font-size: 1.2rem;">🏢 Ruby Auto Parts</h2>
+        <span style="font-size: 0.9rem; color: #bdc3c7;">Inventory Management</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <span style="font-size: 0.9rem;">Welcome, <strong id="currentUser">admin</strong></span>
+        <button onclick="resetBatch()" style="background: #f39c12; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-size: 0.9rem;">Reset Batch</button>
+        <button onclick="logout()" style="background: #e74c3c; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-size: 0.9rem;">Logout</button>
+      </div>
     </div>
+    
+    <div style="margin-top: 1rem; display: flex; flex-wrap: wrap; gap: 0.5rem;">
+      <a href="inventory.html" style="background: #3498db; color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.9rem;">📦 Add Inventory</a>
+      <a href="inventory-list.html" style="background: #2c3e50; color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.9rem;">📋 Inventory List</a>
+      <a href="batch.html" style="background: #9b59b6; color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.9rem;">📋 Batch Management</a>
+      <a href="active-inventory.html" style="background: #27ae60; color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.9rem;">✅ Active Stock</a>
+      <a href="onhold-inventory.html" style="background: #f39c12; color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.9rem;">⏸️ On-Hold Stock</a>
+      <a href="billing.html" style="background: #e67e22; color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.9rem;">💰 Billing</a>
+      <a href="activate.html" style="background: #1abc9c; color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.9rem;">🔄 Activate</a>
+      <a href="audit.html" style="background: #6f42c1; color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.9rem;">🔍 Audit</a>
+      <a href="add-product.html" style="background: #17a2b8; color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.9rem;">➕ Add Product</a>
+      <a href="metrics.html" style="background: #8e44ad; color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.9rem;">📊 Metrics</a>
+    </div>
+  </nav>
+
+  <div id="batchIndicator" class="batch-indicator" style="display: none;">
+    <div class="batch-info">
+      <h3>Current Batch: <span id="currentBatchDisplay">-</span></h3>
+      <p>Vendor: <span id="currentVendorDisplay">-</span> | Invoice: <span id="currentInvoiceDisplay">-</span></p>
+    </div>
+    <button onclick="window.location.href='batch.html'" class="manage-batch-btn">Manage Batch</button>
   </div>
 
   <form id="productForm">
@@ -204,7 +267,7 @@
       <input type="text" id="brand" placeholder="Brand" required>
     </div>
     <div class="form-row">
-      <input type="number" id="quantity" placeholder="Qty" required>
+      <input type="number" id="quantity" placeholder="Qty" value="1" min="1" required>
       <input type="number" id="price" placeholder="Price" step="0.01" required>
     </div>
     <div class="form-row">
@@ -214,47 +277,27 @@
     <button type="submit">Add Product</button>
   </form>
 
-  <input type="text" id="searchInput" placeholder="Search inventory..." oninput="filterInventory()">
 
-  <table id="inventoryTable">
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Variant</th>
-        <th>Class</th>
-        <th>Brand</th>
-        <th>Total Qty</th>
-        <th>On-Hold Qty</th>
-        <th>Active Qty</th>
-        <th>Price</th>
-        <th>Total Value</th>
-        <th>Shelf</th>
-        <th>Date Added</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-
-  <h2>Generated Barcode</h2>
-  <svg id="barcode"></svg><br>
-  <button id="downloadBarcode">Download Barcode</button>
-  <button id="printBarcode">Print Barcode</button>
-  <div id="productDetails"></div>
-  <div class="navigation">
-    <h3>Quick Navigation</h3>
-    <div class="nav-buttons">
-      <button onclick="window.location.href='active-inventory.html'">Active Inventory</button>
-      <button onclick="window.location.href='onhold-inventory.html'">On-Hold Inventory</button>
-      <button onclick="checkPassword()">Go to Billing</button>
-      <button onclick="checkMetrics()">View Metrics</button>
-      <button onclick="window.location.href='activate.html'">Activate Products</button>
-    </div>
-  </div>
   
   <script>
+    function logout() {
+      sessionStorage.removeItem('rubyAutoPartsLoggedIn');
+      sessionStorage.removeItem('rubyAutoPartsUser');
+      window.location.href = 'login.html';
+    }
+    
     // Set current user
     document.getElementById('currentUser').textContent = sessionStorage.getItem('rubyAutoPartsUser') || 'admin';
+    
+    // Check and display batch information
+    const currentBatch = sessionStorage.getItem('currentBatch');
+    if (currentBatch) {
+      const batchData = JSON.parse(currentBatch);
+      document.getElementById('currentBatchDisplay').textContent = batchData.batchId;
+      document.getElementById('currentVendorDisplay').textContent = batchData.vendorName;
+      document.getElementById('currentInvoiceDisplay').textContent = batchData.invoiceNumber;
+      document.getElementById('batchIndicator').style.display = 'block';
+    }
   </script>
   <script type="module" src="src/main.js"></script>
 </body>

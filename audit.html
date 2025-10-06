@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weekly Inventory Audit - Ruby Auto Parts</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #fff;
+            margin: 0;
+            padding: 2rem;
+            color: #000;
+        }
+        
+        
+        .audit-section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            border: 1px solid #999;
+            border-radius: 4px;
+            background: #fff;
+        }
+        
+        .audit-section h2 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 2px solid #000;
+            padding-bottom: 0.5rem;
+            font-size: 1.2rem;
+        }
+        
+        .scan-area {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .scan-input {
+            flex: 1;
+            min-width: 200px;
+            padding: 0.5rem;
+            border: 1px solid #999;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            background: #fff;
+            color: #000;
+        }
+        
+        .scan-input:focus {
+            border-color: #000;
+            outline: none;
+        }
+        
+        button {
+            background-color: #000;
+            color: #fff;
+            border: 1px solid #000;
+            padding: 0.6rem 1rem;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        
+        button:hover {
+            background-color: #555;
+            border-color: #555;
+        }
+        
+        .btn-secondary {
+            background-color: #6c757d;
+            border-color: #6c757d;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #545b62;
+            border-color: #545b62;
+        }
+        
+        .btn-success {
+            background-color: #28a745;
+            border-color: #28a745;
+        }
+        
+        .btn-success:hover {
+            background-color: #218838;
+            border-color: #1e7e34;
+        }
+        
+        .audit-results {
+            margin-top: 1rem;
+        }
+        
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8rem;
+            margin: 0.5rem 0;
+            border: 1px solid #999;
+            border-radius: 4px;
+            background: #fff;
+        }
+        
+        .result-found {
+            border-left: 4px solid #28a745;
+        }
+        
+        .result-missing {
+            border-left: 4px solid #dc3545;
+        }
+        
+        .result-info {
+            border-left: 4px solid #17a2b8;
+        }
+        
+        .item-details {
+            flex: 1;
+        }
+        
+        .item-name {
+            font-weight: 600;
+            color: #333;
+            font-size: 0.9rem;
+        }
+        
+        .item-meta {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 0.2rem;
+        }
+        
+        .item-status {
+            font-weight: 600;
+            padding: 0.3rem 0.6rem;
+            border-radius: 4px;
+            color: white;
+            font-size: 0.8rem;
+        }
+        
+        .status-found {
+            background: #28a745;
+        }
+        
+        .status-missing {
+            background: #dc3545;
+        }
+        
+        .status-info {
+            background: #17a2b8;
+        }
+        
+        .summary {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border: 1px solid #999;
+            border-radius: 4px;
+            margin-top: 1rem;
+        }
+        
+        .summary h3 {
+            margin-top: 0;
+            color: #333;
+            font-size: 1.1rem;
+        }
+        
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 1rem;
+            background: white;
+            border-radius: 4px;
+            border: 1px solid #999;
+        }
+        
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #000;
+        }
+        
+        .stat-label {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 0.3rem;
+        }
+        
+        .clear-btn {
+            margin-left: 0.5rem;
+        }
+        
+        @media (max-width: 768px) {
+            .scan-area {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .scan-input {
+                min-width: auto;
+            }
+            
+            .summary-stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav style="background: #2c3e50; color: white; padding: 1rem; margin-bottom: 1rem; border-radius: 4px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <h2 style="margin: 0; color: white; font-size: 1.2rem;">🔍 Weekly Inventory Audit</h2>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span style="font-size: 0.9rem;">Welcome, <strong>admin</strong></span>
+                <button onclick="logout()" style="background: #e74c3c; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-size: 0.9rem;">Logout</button>
+            </div>
+        </div>
+        
+        <div style="margin-top: 1rem; display: flex; flex-wrap: wrap; gap: 0.5rem;">
+            <a href="inventory.html" style="background: #3498db; color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.9rem;">📦 Add Inventory</a>
+            <a href="inventory-list.html" style="background: #2c3e50; color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.9rem;">📋 Inventory List</a>
+            <a href="batch.html" style="background: #9b59b6; color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.9rem;">📋 Batch Management</a>
+            <a href="active-inventory.html" style="background: #27ae60; color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.9rem;">✅ Active Stock</a>
+            <a href="onhold-inventory.html" style="background: #f39c12; color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.9rem;">⏸️ On-Hold Stock</a>
+            <a href="billing.html" style="background: #e67e22; color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.9rem;">💰 Billing</a>
+            <a href="activate.html" style="background: #1abc9c; color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.9rem;">🔄 Activate</a>
+            <a href="audit.html" style="background: #6f42c1; color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.9rem;">🔍 Audit</a>
+            <a href="add-product.html" style="background: #17a2b8; color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.9rem;">➕ Add Product</a>
+            <a href="metrics.html" style="background: #8e44ad; color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.9rem;">📊 Metrics</a>
+        </div>
+    </nav>
+        
+        <div class="audit-section">
+            <h2>📱 Barcode Scanner</h2>
+            <div class="scan-area">
+                <input type="text" id="barcodeInput" class="scan-input" placeholder="Scan or type barcode here..." autofocus>
+                <button id="scanBtn" class="btn btn-primary">Scan Item</button>
+                <button id="clearBtn" class="btn btn-secondary clear-btn">Clear All</button>
+                <button onclick="generatePDFReport()" class="btn btn-success">📄 Generate PDF Report</button>
+            </div>
+            <p style="color: #666; font-size: 14px; margin: 10px 0;">
+                💡 <strong>Instructions:</strong> Scan each item's barcode to count physical quantities. 
+                You can scan the same barcode multiple times to count multiple units. Generate PDF report when done.
+            </p>
+        </div>
+        
+        <div class="audit-section">
+            <h2>📊 Audit Results</h2>
+            <div id="auditResults" class="audit-results">
+                <p style="text-align: center; color: #666; font-style: italic;">
+                    Start scanning items to see results here...
+                </p>
+            </div>
+        </div>
+        
+        <div class="summary">
+            <h3>📈 Audit Summary</h3>
+            <div class="summary-stats">
+                <div class="stat-item">
+                    <div class="stat-number" id="totalScanned">0</div>
+                    <div class="stat-label">Total Scanned</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="itemsFound">0</div>
+                    <div class="stat-label">Items Found</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="itemsMissing">0</div>
+                    <div class="stat-label">Items Missing</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="accuracyRate">0%</div>
+                    <div class="stat-label">Accuracy Rate</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script type="module" src="src/audit.js"></script>
+</body>
+</html>

@@ -1,17 +1,8 @@
 import './style.css'
-import { createClient } from '@supabase/supabase-js'
 import JsBarcode from 'jsbarcode'
+import { supabase, deleteProduct as deleteProductFromDB, getBarcodeInfo } from './database.js'
 
-const supabase=createClient(
-  'https://yrilfazkyhqwdqkgzcbb.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlyaWxmYXpreWhxd2Rxa2d6Y2JiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc5MzczMTYsImV4cCI6MjA3MzUxMzMxNn0._ayJaSCilAzfOmqcczBYv6_ghYbHevW89u09_2c9b60'
-)
-
-let currentBarcode=null
-
-function generateBarcode(){
-  return Math.random().toString(36).substring(2,10).toUpperCase()
-}
+// Legacy barcode functions removed - barcodes are now displayed in modals
 
 window.filterInventory=function(){
   const query=document.getElementById('searchInput').value.toLowerCase()
@@ -22,119 +13,247 @@ window.filterInventory=function(){
   })
 }
 
-function renderBarcode(barcode){
-  currentBarcode=barcode
-  JsBarcode("#barcode", barcode, {
-    format: "CODE128",
-    width: 2,
-    height: 100,
-    displayValue: true
-  })
-}
-window.renderBarcode=renderBarcode
+// Legacy barcode rendering and download removed - barcodes are now displayed in modals
 
-document.getElementById('downloadBarcode').addEventListener('click',()=>{
-  if(!currentBarcode) return
-  const svg=document.getElementById('barcode')
-  const svgData=new XMLSerializer().serializeToString(svg)
-  const canvas=document.createElement('canvas')
-  const ctx=canvas.getContext('2d')
-  const img=new Image()
-  img.onload=()=>{
-    canvas.width=img.width
-    canvas.height=img.height
-    ctx.drawImage(img,0,0)
-    const link=document.createElement('a')
-    link.download=`barcode_${currentBarcode}.png`
-    link.href=canvas.toDataURL()
-    link.click()
+// Print functionality removed - users can print from the modal system
+
+// Print modal barcode function
+window.printModalBarcode = async function(barcode) {
+  try {
+    // Get barcode info to access product and batch details
+    const barcodeInfo = await getBarcodeInfo(barcode);
+    
+    if (!barcodeInfo) {
+      alert('Barcode details not found.');
+      return;
+    }
+    
+    const svg = document.getElementById('modalBarcode');
+    
+    // Format batch date as YYMMDD
+    const batchDate = barcodeInfo.batch_date 
+      ? new Date(barcodeInfo.batch_date).toISOString().slice(2, 10).replace(/-/g, '')
+      : 'N/A';
+    
+    const printContent = `
+      <div style="text-align:center;font-family:Arial,sans-serif;font-size:1px;">
+        ${svg.outerHTML}
+        <div style="margin-top:1px;font-size:12px;">₹${barcodeInfo.price}</div>
+        <div style="margin-top:1px;font-size:12px;">${barcodeInfo.part_name}</div>
+        <div style="margin-top:1px;font-size:10px;">${barcodeInfo.brand}</div>
+        <div style="margin-top:1px;font-size:10px;">${batchDate}</div>
+      </div>
+    `;
+
+    const printWindow = window.open('', '', 'width=200,height=120');
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Print Barcode</title>
+          <style>
+            @page { margin: 0; }
+            body { margin: 0; padding: 0; }
+          </style>
+        </head>
+        <body style="margin:0;padding:0;">
+          ${printContent}
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+  } catch (error) {
+    console.error('Error printing barcode:', error);
+    alert('Failed to print barcode: ' + error.message);
   }
-  img.src='data:image/svg+xml;base64,'+btoa(svgData)
-})
+}
 
-document.getElementById('printBarcode').addEventListener('click',()=>{
-  if(!currentBarcode) return
-  const printWindow=window.open('','_blank')
-  printWindow.document.write(`
-    <html>
-      <head><title>Barcode - ${currentBarcode}</title></head>
-      <body style="text-align:center;padding:20px;">
-        <h2>Product Barcode</h2>
-        <div id="barcode"></div>
-        <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
-        <script>
-          JsBarcode("#barcode", "${currentBarcode}", {
-            format: "CODE128",
-            width: 2,
-            height: 100,
-            displayValue: true
-          });
-          window.print();
-        </script>
-      </body>
-    </html>
-  `)
-  printWindow.document.close()
-})
+// Activate inventory item function
+window.activateInventoryItem = async function(barcode) {
+  if (!confirm('Are you sure you want to activate this inventory item?')) return;
+  
+  try {
+    // Redirect to activate page with the barcode
+    window.location.href = `activate.html?barcode=${barcode}`;
+  } catch (error) {
+    console.error("Error activating inventory:", error);
+    alert("Failed to activate inventory: " + error.message);
+  }
+}
+
+
+// Delete inventory item function
+window.deleteInventoryItem = async function(barcode) {
+  if (!confirm('Are you sure you want to delete this inventory item?')) return;
+  
+  try {
+    const { error } = await supabase
+      .from('inventory')
+      .delete()
+      .eq('barcode', barcode);
+    
+    if (error) throw error;
+    
+    alert('Inventory item deleted successfully!');
+    loadInventory(); // Reload the table
+  } catch (error) {
+    console.error("Error deleting inventory:", error);
+    alert("Failed to delete inventory: " + error.message);
+  }
+}
+
+// View barcode function
+window.viewBarcode = async function(barcode) {
+  try {
+    const barcodeInfo = await getBarcodeInfo(barcode);
+    
+    if (!barcodeInfo) {
+      alert('Barcode details not found.');
+      return;
+    }
+    
+    // Show barcode details in a modal
+    const modal = document.createElement('div');
+    modal.style.position = 'fixed';
+    modal.style.top = '50%';
+    modal.style.left = '50%';
+    modal.style.transform = 'translate(-50%, -50%)';
+    modal.style.background = 'white';
+    modal.style.padding = '20px';
+    modal.style.border = '2px solid #333';
+    modal.style.borderRadius = '8px';
+    modal.style.zIndex = '1000';
+    modal.style.maxWidth = '500px';
+    modal.style.width = '90%';
+    
+    modal.innerHTML = `
+      <h3>Barcode Details</h3>
+      <div style="text-align: center; margin: 20px 0;">
+        <svg id="modalBarcode" width="200" height="60"></svg>
+      </div>
+      <p><strong>Barcode:</strong> ${barcodeInfo.barcode}</p>
+      <p><strong>Product:</strong> ${barcodeInfo.part_name}</p>
+      <p><strong>Brand:</strong> ${barcodeInfo.brand}</p>
+      <p><strong>Price:</strong> ₹${barcodeInfo.price}</p>
+      <p><strong>Batch:</strong> ${barcodeInfo.batch_number}</p>
+      <p><strong>Vendor:</strong> ${barcodeInfo.vendor_name}</p>
+      <p><strong>Batch Date:</strong> ${barcodeInfo.batch_date ? new Date(barcodeInfo.batch_date).toLocaleDateString() : 'N/A'}</p>
+      <p><strong>On-Hold Qty:</strong> ${barcodeInfo.quantity_on_hold}</p>
+      <p><strong>Active Qty:</strong> ${barcodeInfo.quantity_active}</p>
+      <div style="text-align: center; margin-top: 20px;">
+        <button onclick="printModalBarcode('${barcode}')" style="padding: 8px 16px; background: #17a2b8; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;">Print</button>
+        <button id="closeModalBtn" style="padding: 8px 16px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">Close</button>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Add event listener for close button
+    document.getElementById('closeModalBtn').addEventListener('click', function() {
+      modal.remove();
+    });
+    
+    // Add click-outside-to-close functionality
+    modal.addEventListener('click', function(e) {
+      if (e.target === modal) {
+        modal.remove();
+      }
+    });
+    
+    // Generate barcode in modal
+    JsBarcode("#modalBarcode", barcode, {
+      format: "CODE128",
+      lineColor: "#000",
+      width: 1.3,
+      height: 25,
+      displayValue: true,
+      fontSize: 10,
+      textMargin: 2
+    });
+    
+  } catch (error) {
+    console.error("Error viewing barcode:", error);
+    alert("Failed to load barcode details: " + error.message);
+  }
+}
 
 async function loadInventory(){
-  const {data,error}=await supabase.from('products').select('*').gt('qty_on_hold', 0)
-  if(error){
-    console.error("Error loading inventory:",error)
-    return
+  try {
+    // Load unaggregated on-hold inventory (individual batch items)
+    const { data, error } = await supabase
+      .from('batch_details')
+      .select('*')
+      .gt('quantity_on_hold', 0)
+      .order('batch_date', { ascending: false })
+      .order('part_name', { ascending: true });
+
+    if (error) {
+      console.error("Error loading inventory:", error);
+      return;
+    }
+
+    const tbody = document.querySelector('#inventoryTable tbody');
+    tbody.innerHTML = '';
+
+    data.forEach(item => {
+      const totalQuantity = item.quantity_on_hold + item.quantity_active;
+      const totalPrice = (totalQuantity * item.price).toFixed(2);
+      const formattedDate = item.inventory_added_at
+        ? new Date(item.inventory_added_at).toLocaleString('en-IN', {
+            timeZone: 'Asia/Kolkata',
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+          })
+        : '-';
+      const batchDate = item.batch_date
+        ? new Date(item.batch_date).toLocaleDateString('en-IN')
+        : '-';
+
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${item.part_name}</td>
+        <td>${item.variant || '-'}</td>
+        <td>${item.class || '-'}</td>
+        <td>${item.brand}</td>
+        <td>${totalQuantity}</td>
+        <td style="color:red">${item.quantity_on_hold}</td>
+        <td>${item.quantity_active}</td>
+        <td>${item.price}</td>
+        <td>${totalPrice}</td>
+        <td>${item.barcode}</td>
+        <td>${item.batch_number}</td>
+        <td>${item.vendor_name}</td>
+        <td>${batchDate}</td>
+        <td>${formattedDate}</td>
+        <td>
+          <button onclick="activateInventoryItem('${item.barcode}')">Activate</button>
+          <button onclick="deleteInventoryItem('${item.barcode}')">Delete</button>
+          <button onclick="viewBarcode('${item.barcode}')">View Barcode</button>
+        </td>
+      `;
+      tbody.appendChild(row);
+    });
+  } catch (error) {
+    console.error("Error loading inventory:", error);
+    alert("Failed to load inventory: " + error.message);
   }
-
-  const tbody=document.querySelector('#inventoryTable tbody')
-  tbody.innerHTML=''
-
-  data.forEach(product=>{
-    const totalPrice=(product.qty_on_hold*product.price).toFixed(2)
-    const formattedDate=product.date_added
-      ?new Date(product.date_added).toLocaleString('en-IN',{
-        timeZone:'Asia/Kolkata',
-        year:'numeric',month:'short',day:'numeric'
-      })
-      :'-'
-    const minStock=product.min_stock||20
-    const quantityColor=product.qty_on_hold<minStock?'red':'black'
-
-    const row=document.createElement('tr')
-    row.innerHTML=`
-      <td>${product.name}</td>
-      <td>${product.variant}</td>
-      <td>${product.class_of_product||'-'}</td>
-      <td>${product.brand}</td>
-      <td style="color:${quantityColor}">${product.qty_on_hold}</td>
-      <td>${product.price}</td>
-      <td>${totalPrice}</td>
-      <td>${product.shelf_code||'-'}</td>
-      <td>${formattedDate}</td>
-      <td>
-        <button onclick="editProduct('${product.id}')">Edit</button>
-        <button onclick="deleteProduct('${product.id}')">Delete</button>
-        <button onclick="renderBarcode('${product.barcode}')">View Barcode</button>
-      </td>
-    `
-    tbody.appendChild(row)
-  })
 }
 
-window.deleteProduct=async function(id){
-  if(!confirm('Are you sure you want to delete this product?')) return
+window.deleteProduct = async function(id) {
+  if (!confirm('Are you sure you want to delete this product?')) return;
   
-  const {error}=await supabase.from('products').delete().eq('id',id)
-  if(error){
-    console.error("Error deleting product:",error)
-    alert("Failed to delete product.")
-  }else{
-    alert("Product deleted successfully.")
-    loadInventory()
+  try {
+    await deleteProductFromDB(id);
+    alert("Product deleted successfully.");
+    loadInventory();
+  } catch (error) {
+    console.error("Error deleting product:", error);
+    alert("Failed to delete product: " + error.message);
   }
 }
 
-window.editProduct=function(id){
-  window.location.href=`edit.html?id=${id}`
-}
 
 // Load inventory on page load
 loadInventory()
