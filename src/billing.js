@@ -20,7 +20,7 @@ document.getElementById('customerForm').addEventListener('submit',e=>{
 
 document.getElementById('barcodeInput').addEventListener('input',e=>{
   const code=e.target.value.trim()
-  if(code.length<6||scanLock)return
+  if(code.length<8||scanLock)return
   scanLock=true
   setTimeout(()=>{scanLock=false},300)
   addScannedItem(code)

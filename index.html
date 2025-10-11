@@ -3,24 +3,6 @@
 <head>
   <meta charset="UTF-8" />
   <title>Inventory</title>
-  <script>
-    function checkPassword() {
-      const password=prompt("Enter passcode to access analytics:")
-      if(password==="caliberparts2025") {
-        window.location.href="billing.html"
-      } else {
-        alert("Incorrect password. Access denied.")
-      }
-    }
-    function checkMetrics(){
-      const password=prompt("Enter passcode to access metrics:")
-      if(password==="caliberparts2025"){
-        window.location.href="metrics.html"
-      } else {
-        alert("Incorrect password. Access denied.")
-      }
-    }
-  </script>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, sans-serif;
@@ -181,8 +163,10 @@
   <button id="downloadBarcode">Download Barcode</button>
   <button id="printBarcode">Print Barcode</button>
   <br><br>
-  <button onclick="checkPassword()">Go to Billing</button>
-  <button onclick="checkMetrics()">View Metrics</button>
+  <button onclick="window.location.href='billing.html'">Go to Billing</button>
+
+  <button onclick="window.location.href='metrics.html'">View Metrics</button>
+
   <br><br>
   <script type="module" src="src/main.js"></script>
 </body>
